@@ -1,5 +1,12 @@
 # ZplPrinter
 
+
+
+# FORKED FROM https://github.com/sbinkert/ZplPrinter/
+
+## To use, import the `ZplPrinter` folder as an unpacked extension with dev mode on. And voila
+
+
 Printer emulator for zpl rendering engine. The emulator is based on the [labelary](http://labelary.com/service.html) web service. You can configure print density, label size and the tcp server to listen for any incoming labels.
 
 ## References
