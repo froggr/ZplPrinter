@@ -56,7 +56,10 @@ $(document).ready(function () {
                             saveLabel(blob, 'pdf');
                         }
                     }
-                    var size = getSize(width, height)
+                    var size = getSize(width, height);
+                    var labelContainer = document.createElement('div');
+                    labelContainer.setAttribute('style','position:relative');
+                    labelContainer.setAttribute('id','label_'+id);
                     var textDiv = document.createElement('div');
                     textDiv.setAttribute('id','text_id_'+(id));
                     textDiv.setAttribute('class','textLayer');
@@ -70,8 +73,9 @@ $(document).ready(function () {
                     };
 
                     var url = window.URL.createObjectURL(blob);
-                    $('#label').prepend(textDiv);
-                    $('#label').prepend(img);
+                    $('#label').prepend(labelContainer);
+                    $('#label_'+id).prepend(textDiv);
+                    $('#label_'+id).prepend(img);
                     var offset = size.height + 20;
                     $('#label').css({ "top": '-' + offset + 'px' });
 

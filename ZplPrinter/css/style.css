@@ -15,11 +15,8 @@ input:required:invalid, input:focus:invalid { border-color: #d9534f; }
 .panel, .panel-heading { border-radius: 0 !important; }
 
 .label-container {
-    background-color: #f8f8f8;
-    border: 1px solid transparent;
-    border-color: #e7e7e7 !important;
-    border-radius: 4px;
-    height: 623px;
+    background-color: #f9f9f9;
+    height: 675px;
     overflow: auto;
 }
 
@@ -51,4 +48,10 @@ input:required:invalid, input:focus:invalid { border-color: #d9534f; }
 
 .textLayer {
     user-select: text;
+}
+
+.thumbnail:not([data-loaded]){
+    border:none !important;
+    margin: 10px auto !important;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 2px rgb(0 0 0 / 24%);
 }
