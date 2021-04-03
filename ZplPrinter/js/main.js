@@ -2,7 +2,8 @@ var socketId, clientSocketInfo;
 var configs = {};
 var retainEntry = null;
 var pathEntry = null;
-
+var elID = 0;
+var url = null;
 $(function () {
     $(window).bind('focus blur', function () {
         $('#panel-head').toggleClass("panel-heading-blur");
@@ -17,6 +18,7 @@ $(document).ready(function () {
     });
 
     chrome.sockets.tcp.onReceive.addListener(function (info) {
+        
         notify('{0} bytes received from Client: <b>{1}</b> Port: <b>{2}</b>'.format(info.data.byteLength, clientSocketInfo.peerAddress, clientSocketInfo.peerPort), 'print', 'info', 1000);
         var zpls = String.fromCharCode.apply(null, new Uint8Array(info.data)).split(/\^XZ/);
         if (!configs.keepTcpSocket) {
@@ -38,33 +40,116 @@ $(document).ready(function () {
                 }
             }
 
+            console.log(zpl);
             var xhr = new XMLHttpRequest();
             xhr.open('POST', 'http://api.labelary.com/v1/printers/{0}dpmm/labels/{1}x{2}/0/'.format(configs.density, width, height), true);
             xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.setRequestHeader("Accept", "application/pdf");
+
             xhr.responseType = 'blob';
             xhr.onload = function (e) {
+                var id = makeid(8);
                 if (this.status == 200) {
                     var blob = this.response;
                     if (configs['saveLabels']) {
                         if (configs['filetype'] == '1') {
-                            saveLabel(blob, 'png');
+                            saveLabel(blob, 'pdf');
                         }
                     }
                     var size = getSize(width, height)
-                    var img = document.createElement('img');
+                    var textDiv = document.createElement('div');
+                    textDiv.setAttribute('id','text_id_'+(id));
+                    textDiv.setAttribute('class','textLayer');
+                    var img = document.createElement('canvas');
                     img.setAttribute('height', size.height);
                     img.setAttribute('width', size.width);
                     img.setAttribute('class', 'thumbnail');
+                    img.setAttribute('id','id_'+(id));
                     img.onload = function (e) {
-                        window.URL.revokeObjectURL(img.src);
+                        window.URL.revokeObjectURL(url);
                     };
 
-                    img.src = window.URL.createObjectURL(blob);
-
+                    var url = window.URL.createObjectURL(blob);
+                    $('#label').prepend(textDiv);
                     $('#label').prepend(img);
                     var offset = size.height + 20;
                     $('#label').css({ "top": '-' + offset + 'px' });
-                    $('#label').animate({ "top": "0px" }, 1500);
+
+                    /* start */
+                    
+                    
+                    //
+                    // The workerSrc property shall be specified.
+                    //
+                    var pdfjsLib = window['pdfjs-dist/build/pdf'];
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/pdf.worker.js';
+                    //
+                    // Asynchronous download PDF
+                    //
+                    var loadingTask = pdfjsLib.getDocument(url);
+                    console.log('start');
+                    loadingTask.promise.then(function(pdf) {
+                      //
+                      // Fetch the first page
+                      //
+                      pdf.getPage(1).then(function(page) {
+                        var scale = 2;
+                        var viewport = page.getViewport({ scale: scale});
+                  
+                        //
+                        // Prepare canvas using PDF page dimensions
+                        //
+                        var canvas = document.getElementById('id_'+ id);
+                        var context = canvas.getContext('2d');
+                        //canvas.height = viewport.height;
+                        //canvas.width = viewport.width;
+                  
+                        //
+                        // Render PDF page into canvas context
+                        //
+                        var renderContext = {
+                          canvasContext: context,
+                          viewport: viewport,
+                        };
+                        
+                        var renderTask = page.render(renderContext);
+
+                        renderTask.promise.then(function() {
+                            // Returns a promise, on resolving it will return text contents of the page
+                            return page.getTextContent();
+                          }).then(function(textContent) {
+                      
+                            // Assign CSS to the textLayer element
+                            var textLayer = document.getElementById("text_id_"+ id);
+                      
+                            textLayer.style.left = canvas.offsetLeft + 'px';
+                            textLayer.style.top = canvas.offsetTop + 'px';
+                            textLayer.style.height = canvas.offsetHeight + 'px';
+                            textLayer.style.width = canvas.offsetWidth + 'px';
+                      
+                            // Pass the data to the method for rendering of text over the pdf canvas.
+                            pdfjsLib.renderTextLayer({
+                              textContent: textContent,
+                              container: textLayer,
+                              viewport: viewport,
+                              textDivs: []
+                            });
+                          }).then(function(){
+                            $('#label').animate({ "top": "0px" }, 1500);
+                            console.log('end');
+                            $('#text_id_'+id+' span').on('click',function(){ selectText($(this)[0]); console.log('go'); });
+                          });
+
+
+
+
+                        
+
+                      });
+                    });
+
+                    /* end */
+                    
                 }
             };
             xhr.send(zpl);
@@ -101,6 +186,7 @@ function saveLabel(blob, ext) {
 }
 
 function savePdf(zpl, density, width, height) {
+    console.log(density);
     var xhr = new XMLHttpRequest();
     xhr.open('POST', 'http://api.labelary.com/v1/printers/{0}dpmm/labels/{1}x{2}/0/'.format(density, width, height), true);
     xhr.setRequestHeader('Accept', 'application/pdf');
@@ -363,3 +449,32 @@ String.prototype.format = function () {
     }
     return s;
 };
+
+
+function selectText(node) {
+    //node = document.getElementById(node);
+
+    if (document.body.createTextRange) {
+        const range = document.body.createTextRange();
+        range.moveToElementText(node);
+        range.select();
+    } else if (window.getSelection) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    } else {
+        console.warn("Could not select text in node: Unsupported browser.");
+    }
+}
+
+function makeid(length) {
+    var result           = '';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < length; i++ ) {
+       result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+ }

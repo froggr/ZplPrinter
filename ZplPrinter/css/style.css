@@ -48,3 +48,7 @@ input:required:invalid, input:focus:invalid { border-color: #d9534f; }
     background-color: #215480 !important;
     border-color: #215480 !important;
 }
+
+.textLayer {
+    user-select: text;
+}

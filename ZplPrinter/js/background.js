@@ -2,7 +2,7 @@ chrome.app.runtime.onLaunched.addListener(function () {
     chrome.app.window.create('main.html', {
         frame: 'none',
         bounds: {
-            width: 535,
+            width: 450,
             height: 768
         },
         resizable: false,
@@ -14,8 +14,8 @@ chrome.runtime.onInstalled.addListener(function (details) {
         chrome.storage.local.set({
             isOn: true,
             density: '8',
-            width: '4',
-            height: '6',
+            width: '2.5',
+            height: '1.5',
             unit: '1',
             host: '127.0.0.1',
             port: '9100',
