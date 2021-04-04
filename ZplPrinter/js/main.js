@@ -294,6 +294,11 @@ function initEvents() {
         }
     });
 
+    $('#panel-head').click(function(){
+        var win = chrome.app.window.current();
+        win.innerBounds.height = win.innerBounds.height == 40 ? 768 : 40; 
+    });
+
     $('#btn-close').click(function () {
         chrome.storage.local.set({ isOn: $('#btn-on').hasClass('active') }, function () {
             window.close();
@@ -462,12 +467,14 @@ function selectText(node) {
         const range = document.body.createTextRange();
         range.moveToElementText(node);
         range.select();
+        document.execCommand("copy");
     } else if (window.getSelection) {
         const selection = window.getSelection();
         const range = document.createRange();
         range.selectNodeContents(node);
         selection.removeAllRanges();
         selection.addRange(range);
+        document.execCommand("copy");
     } else {
         console.warn("Could not select text in node: Unsupported browser.");
     }
